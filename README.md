@@ -59,6 +59,34 @@ def index():
 ```
 
 ### 静态资源
+代码: `git checkout v0.3`   
+在html中引入静态资源所在的url需要使用`url_for()`函数(第一章有此函数的用法),在静态资源文件中需要传入的端点值为"static",同时使用filename参数传入相对于static文件名  
+`<img src="{{ url_for('static', filename='foo.jpg') }}"`
+
+- 添加Favicon:修改index.html的head
+```
+<link rel="icon" href="{{ url_for('static', filename='favico.png') }}">
+```
+- 添加其他图片  
+创建"static"其中添加两张图片并修改html引用他们
+```
+<head>
+    ...
+    <img src="{{ url_for('static', filename='images/avatar.png') }}" alt="Avatar">
+    <title>{{ name }}'s Info</title>
+    ...
+    <img alt="Walking..." src="{{ url_for('static', filename='images/totoro.gif') }}"
+</body>
+```
+- 添加CSS
+在static下创建style.css,在html的head标签页中引入 并在相关属性下添加对应class
+
+`<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" `
+
+
+
+
+
 
 
 
