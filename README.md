@@ -1,5 +1,5 @@
 # Flask Hello
-
+学习出处：http://helloflask.com/tutorial/
 ## Hello-01
 代码: `git checkout v0.1`
 ### 环境变量
@@ -37,9 +37,28 @@ def username(name):
     return "hello you are: %s" %name
 ```
    4. 视图函数名：视图函数名是自定义的，代表某个路由的端点(endpoint),同时用来生成url,对于程序的url，为了避免手写，flask提供了"url_for"函数生成url，它接受的第一个参数是端点值，默认为视图函数名称
+## 模板和静态文件
+按照默认设置，flask会在应用程序的根目录的"templates"目录中寻找模板，在同级目录的"static"目录中寻找静态资源文件
+### 模板
+代码: `git checkout v0.2`  
+- {{  }} :插值
+- {% %}:标记语句(if for等) 注意{% endxx %}
+- {#  #}: 注释
+- {% extend 'xxx' %}: 继承
+- {% macro xxx %}: 宏
+- {% include 'xxx' %}: 包含
+- {{ 变量|过滤器 }}
 
+编写主页模板templates/index.html
+编写app.py并在里面初始化数据：
+修改路由进行模板渲染
+```
+@app.route('/')
+def index():
+    return render_template('index.html', name=name, movies=movies)
+```
 
-
+### 静态资源
 
 
 
