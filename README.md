@@ -249,8 +249,40 @@ def forge():
     click.echo("Done....")
 ```
 
+## 模板优化
+代码: `git checkout v0.5`   
+- 创建404页面  
+  添加：templates/404.html并添加app中的404路由
+```
+@app.errorhandler(404)  # 传入错误代码
+def page_not_found(e):
+    user = User.query.first()
+    return render_template('404.html', user=user), 404 # 返回模板和状态码
+```
+- 使用模板上下文处理函数  
+因为许多模板都需要使用变量，可使用`app.context_processor`装饰器注册模板上下文处理函数，这个函数返回变量会注入到每个模板环境中，可以在每个模板环境中使用
+```
+@app.context_processor
+def inject_user():  # 可以随意起名
+    user = User.query.first() 
+    return dict(user=user)  # 需要返回字典，等同于return {'user': user}
+```
+接下来可以删除404和主页的user变量和模板关键字
 
-
+- 使用模板继承  
+创建base.html作为基模板，将html中通用的部分提取出来,并添加新样式  
+模板继承重构index.html和404html(以前的html备份为.bak)
+- 添加IMDb连接  
+在主页模板中，为每条资源添加一个IMDb连接，这个连接的href属性我为IMDb搜索页面的url,关键词为电影标题,并添加样式
+```
+<span class="float-right">
+            <a class="imdb" href="https://www.imdb.com/find?q={{ movie.title }}" target="_blank"
+                title="Find this movie on IMDb">IMDb</a>
+        </span>
+```
+- 添加400和500的处理页面并把错误页面统一移动到errors目录
+- 如果电影标题为中文恶意使用豆瓣:`https://movie.douban.com/subject_search?
+search_text={{ movie.title }}`
 
 
 

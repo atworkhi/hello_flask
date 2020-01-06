@@ -74,8 +74,26 @@ def forge():
     click.echo("Done....")
 
 
+# 模板上下文处理函数
+@app.context_processor
+def inject_user():
+    user = User.query.first()
+    return dict(user=user)  # 需要返回字典，等同于return {'user': user}
 @app.route('/')
 def index():
-    user = User.query.first()  # 获取用户记录
+    # user = User.query.first()  # 获取用户记录
     movies = Movie.query.all()  # 从数据库获取电影
-    return render_template('index.html', user=user, movies=movies)
+    # return render_template('index.html', user=user, movies=movies)
+    return render_template('index.html', movies=movies)  # 使用上下文模板函数
+# 404
+@app.errorhandler(404)  # 传入错误代码
+def page_not_found(e):
+    # user = User.query.first()
+    # return render_template('404.html', user=user), 404  # 返回模板和状态码
+    return render_template('errors/404.html'), 404  # 使用上下文模板函数传入user 
+@app.errorhandler(400)
+def bad_request(e):
+    return render_template('errors/400.html'), 400
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('errors/500.html'), 500

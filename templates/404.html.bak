@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" href="{{ url_for('static', filename='favico.png') }}">
+    <title>{{ user.name }}'s Info</title>
+</head>
+
+<body>
+    <h2>
+        <img class="avatar" src="{{ url_for('static', filename='images/avatar.png') }}" alt="Avatar">
+        <h2>{{ user.name }}'s web info</h2>
+    </h2>
+    <ul class="movie-list">
+        <li>
+            Page Not Found - 404
+            <span class="float-right">
+                <a href="{{ url_for('index') }}">Go Back</a>
+            </span>
+        </li>
+    </ul>
+    <footer>
+        <small>&copy; 2020 Flask web</small>
+    </footer>
+    <img class="totoro" alt="Walking..." src="{{ url_for('static', filename='images/totoro.gif') }}" </body>

@@ -1,27 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="icon" href="{{ url_for('static', filename='favico.png') }}">
-    <img class="avatar" src="{{ url_for('static', filename='images/avatar.png') }}" alt="Avatar">
-    <title>{{ user.name }}'s Info</title>
-</head>
-<body>
-    <h2>{{ user.name }}'s web info</h2>
-    {# length 过滤其获取变量长度 #}
-    <p>{{ movies|length }} Titles</p>
-    <ul class="movie-list">
-        {# 迭代 #}
-        {% for movie in movies %}
-        <li>{{ movie.title }}-{{ movie.year }}</li>
-        {% endfor %}
-    </ul>
-    <footer>
-        <small>&copy; 2020 Flask web</small>
-    </footer>
-    <img class="totoro" alt="Walking..." src="{{ url_for('static', filename='images/totoro.gif') }}"
-</body>
-</html>
+{% extends 'base.html' %}
+{% block content %}
+{# length 过滤其获取变量长度 #}
+<p>{{ movies|length }} Titles</p>
+<ul class="movie-list">
+    {# 迭代 #}
+    {% for movie in movies %}
+    <li>
+        {{ movie.title }}-{{ movie.year }}
+        <span class="float-right">
+            <a class="imdb" href="https://www.imdb.com/find?q={{ movie.title }}" target="_blank"
+                title="Find this movie on IMDb">IMDb</a>
+        </span>
+    </li>
+
+    {% endfor %}
+</ul>
+{% endblock %}
