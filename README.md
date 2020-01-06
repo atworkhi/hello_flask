@@ -81,7 +81,171 @@ def index():
 - 添加CSS
 在static下创建style.css,在html的head标签页中引入 并在相关属性下添加对应class
 
-`<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" `
+`<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" `  
+- 更多的样式可是使用Bootstrap-flask:  
+ https://bootstrap-flask.readthedocs.io/en/latest/
+  
+## 数据库
+代码: `git checkout v0.4`   
+使用 SQLAlchemy操作数据库，Flask提供了简化的第三方库的继承，集成的SQLAlchemy的插件叫：Flask-SQLAlchemy
+> pip install flask-sqlalchemy
+
+### 初始化
+- 初始化  
+```
+from flask_sqlalchemy import SQLAlchemy
+app = Flask(__name__)
+db = SQLAlchemy(app=app)  # 初始化数据库
+```
+- 连接数据库
+为了设置 Flask、扩展或是我们程序本身的一些行为，我们需要设置和定义一些配置变量。Flask 提供了一个统一的接口来写入和获取这些配置变量： Flask.config 字典。配置变量的名称必须使用大写，写入配置的语句一般会放到扩展类实例化语句之前
+`SQLALCHEMY_DATABASE_URI`变量来告诉 SQLAlchemy 数据库连接地址
+```
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + os.path.join(app.root_path, 'data.db')  # 连接数据库
+# 注意 使用win使用"///"不是四个
+import os, sys
+WIN = sys.platform.startswith('win')  # 判断系统
+if WIN:  # windows 使用三斜线
+    prefix = 'sqlite:///'
+else:
+    prefix = 'sqlite:////'
+app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')  # 连接数据库
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False # 关闭对模型修改的监控
+db = SQLAlchemy(app=app)
+```
+- 创建数据模型  
+模型类要声明继承 db.Model  
+每一个属性都I要实例化db.Column (见代码示例)   
+如果需要指定表明使用"__tablename__"属性
+
+| 常用字段 |  说明 |
+|----|----|
+| db.Integer | 整型|
+| db.String(size) | 字符串 |
+| db.Text | 长文本 |
+| db.DateTime | 时间日期(Python datetime对象)
+| db.Float | 浮点数 |
+| db.Boolean | 布尔值 |
+
+- 创建数据库表
+> $ flask shell   
+> from app import db  
+> db.create_all()  # 创建表  
+> db.drop_all()  # 删除表  
+
+每次创建表和数据库改变需要删除表，这样也损坏了数据，如果不想破坏数据库的数据，可以使用数据库迁移工具(集成了Alembic的flask-migrate)  
+创建数据库需要进入到flask shell中,因此可以写个自定义命令操作数据库
+```
+import click
+# 将初始化数据 注册为命令 flask initdb
+@app.cli.command()  # 注册为命令
+@click.option('--drop', is_flag=True, help='Create after drop.') # 设置选项
+def initdb(drop):
+    '''
+    Init the database.
+    '''
+    if drop: # 判断是否输入了选项
+        db.drop_all()
+    db.create_all()
+    click.echo('initialized database.') # 输出提示信息
+# flask initdb 创建数据表
+# flask initdb --drop # 删除表后重建
+```
+### CRUD
+- 增加
+```
+>>> from app import User, Movie # 导入模型类
+>>> user = User(name='Grey Li') # 创建一个 User 记录
+>>> m1 = Movie(title='Leon', year='1994') # 创建一个 Movie 记
+>>> m2 = Movie(title='Mahjong', year='1996') # 再创建一个 Movi记录
+>>> db.session.add(user) # 把新创建的记录添加到数据库会话
+>>> db.session.add(m1)>>> db.session.add(m2)
+>>> db.session.commit() # 提交数据库会话，只需要在最后调用一次即
+```
+- 查询
+> <模型类>.query.<过滤方法>.<查询方法>
+
+**过滤方法：**
+| 过滤方法 |说明 |
+|---|---|
+| filter() | 使用指定的规则过滤记录，返回新产生的查询对象 |
+| filter_by() | 使用指定规则过滤记录（以关键字表达式的形式），返回新产生的查询对象|
+| order_by() | 根据指定条件对记录进行排序，返回新产生的查询对象 |
+| group_by() | 根据指定条件对记录进行分组，返回新产生的查询对象 |
+**查询方法：**
+| 查询方法 | 说明 |
+|---|---|
+| all() | 返回包含所有查询记录的列表 |
+| first() | 返回查询的第一条记录，如果未找到，则返回None |
+| get(id) | 传入主键值作为参数，返回指定主键值的记录，如果未找到，则返回None |
+| count() | 返回查询结果的数量 |
+| first_or_404() | 返回查询的第一条记录，如果未找到，则返回404错误响应 |
+| get_or_404(id) | 传入主键值作为参数，返回指定主键值的记录，如果未找到，则返回404错误响应 | 
+| paginate() | 返回一个Pagination对象，可以对记录进行分页处理 |
+```
+>>> from app import Movie # 导入模型类
+>>> movie = Movie.query.first() # 获取 Movie 模型的第一个记录（返回模型类实例）
+>>> movie.title # 对返回的模型类实例调用属性即可获取记录的各字段数据
+'Leon'
+>>> movie.year
+'1994'
+>>> Movie.query.all() # 获取 Movie 模型的所有记录，返回包含多个模型类实例的列表
+[<Movie 1>, <Movie 2>]
+>>> Movie.query.count() # 获取Movie 模型所有记录的数量
+2
+>>> Movie.query.get(1) # 获取主键值为 1 的记录
+<Movie 1>
+>>> Movie.query.filter_by(title='Mahjong').first() # 获取title字段值为 Mahjong 的记录
+<Movie 2>
+>>> Movie.query.filter(Movie.title=='Mahjong').first() # 等同于上面的查询，但使用不同的过滤方法
+<Movie 2>
+```
+- 修改
+```
+>>> movie = Movie.query.get(2)
+>>> movie.title = 'WALL-E' # 直接对实例属性赋予新的值即可
+>>> movie.year = '2008
+>>> db.session.commit() # 注意仍然需要调用这一行来提交改动
+```
+- 删除
+```
+>>> movie = Movie.query.get(1)
+>>> db.session.delete(movie) # 使用db.session.delete() 方法删除记录，传入模型实例
+>>> db.session.commit() # 提交改动
+```
+### app.py操作数据库
+修改index()使其读取数据库数据并修改对应模板`{{ user.name }}`  
+创建命令`flask forge` 生成数据到数据库
+```
+# 生成数据到数据库
+@app.cli.command()
+def forge():
+    '''Generate fake data.'''
+    db.create_all()
+    name = 'Han Star'
+
+    movies = [
+        {'title': 'My Neighbor Totoro', 'year': '1988'},
+        {'title': 'Dead Poets Society', 'year': '1989'},
+        {'title': 'A Perfect World', 'year': '1993'},
+        {'title': 'Leon', 'year': '1994'},
+        {'title': 'Mahjong', 'year': '1996'},
+        {'title': 'Swallowtail Butterfly', 'year': '1996'},
+        {'title': 'King of Comedy', 'year': '1999'},
+        {'title': 'Devils on the Doorstep', 'year': '1999'},
+        {'title': 'WALL-E', 'year': '2008'},
+        {'title': 'The Pork of Music', 'year': '2012'},
+    ]
+
+    user = User(name=name)
+    db.session.add(user)
+    for m in movies:
+        movie = Movie(title=m['title'], year=m['year'])
+        db.session.add(movie)
+    db.session.commit()
+    click.echo("Done....")
+```
+
 
 
 
