@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
@@ -10,7 +11,11 @@
     <title>{{ user.name }}'s Info</title>
     {% endblock %}
 </head>
+
 <body>
+    {% for message in get_flashed_messages() %}
+    <div class="alert">{{ message }}</div>
+    {% endfor %}
     <h2>
         <img class="avatar" src="{{ url_for('static', filename='images/avatar.png') }}" alt="Avatar">
         {{ user.name }}'s web info
@@ -27,6 +32,4 @@
     <footer>
         <small>&copy; 2020 Flask web</small>
     </footer>
-    <img class="totoro" alt="Walking..." src="{{ url_for('static', filename='images/totoro.gif') }}"
-</body>
-</html>
+    <img class="totoro" alt="Walking..." src="{{ url_for('static', filename='images/totoro.gif') }}" </body> </html>

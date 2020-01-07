@@ -284,6 +284,88 @@ def inject_user():  # 可以随意起名
 - 如果电影标题为中文恶意使用豆瓣:`https://movie.douban.com/subject_search?
 search_text={{ movie.title }}`
 
+## 表单操作
+代码: `git checkout v0.6`   
+实际对数据的增删改查
+
+### 增加
+- 创建表单
+在首页中添加一个表单,并设置"autocomplete"属性off关闭自动完成，还添加了"required",如果用户没输入就提交了，则会显示错误,并创建表单对应的css  
+- 提交数据 修改index()函数使其支持POST并提交添加数据
+```
+from flask import request, url_for, redirect, flash
+# request 请求路径(request.path)
+# request 请求方法(request.method)
+# request 请求表单(request.form)
+# request 字符串(request.args)
+```
+- flash 消息  
+使用直接`flash(message)` ,在内部会吧消息存储到Flask提供的session对象中，session用来在请求之间存储数据，它会把数据签名后存储到浏览器Cookie中，所以要设置签名密钥:
+> app.config['SECRET_KEY'] = 'dev' # 等同于 app.secret_key = 'dev' 
+ 
+在基模板中(base.html)中使用`get_flashed_messages()`获取提示消息并显示,并为其增加alert样式
+```
+<!-- 插入到页面标题上方 -->
+{% for message in get_flashed_messages() %}
+<div class="alert">{{ message }}</div>
+{% endfor %}
+<h2>...</h2>
+```
+还需要再服务器增加验证`if not ....`,实际开发中用第三方框架WTForms(https://github.com/wtforms/wtforms)实现验证和表单
+- 重定向使用`redirect()`
+
+### 修改
+在app.py中添加修改需要视图函数"edit"
+```python
+@app.route('/movie/edit/<int:movie_id>', methods=['GET', 'POST'])
+def edit(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    if request.method == 'POST':
+        title = request.form['title']
+        year = request.form['year']
+
+        if not title or not year or len(year) > 4 or len(title) > 60:
+            flash('Invalid input.')
+            return redirect(url_for('edit', movie_id=movie_id))
+        movie.title = title
+        movie.year = year
+        db.session.commit()
+        flash('Item updated.') 
+        return redirect(url_for('index'))  # 重定向首页
+    return render_template('edit.html', movie=movie)
+```
+添加 edit.html 并修改 index.html增加edit超链接
+```
+<a href="{{ url_for('edit', movie_id=movie.id) }}">Edit</a>
+```
+### 删除
+修改app.py 增加删除的视图函数"delete"
+```
+@app.route('/movie/delete/<int:movie_id>', methods=['POST'])
+def delete(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    db.session.delete(movie)
+    db.session.commit()
+    flash('Item deleted.')
+    return redirect(url_for('index'))
+```
+在首页(index.html)添加删除链接
+```
+<form class="inline-form" method="post" action="{{ url_for('delete', movie_id=movie.id) }}">
+                <input class='btn' type="submit" name="delete" value="delete" onclick="return confirm('Are you sure?')">
+            </form>
+```
+为了让表单中的删除按钮和编辑拍成一行，添加css定义
+```
+.inline-form {
+    display: inline;
+}
+```
+
+
+
+
+
 
 
 
