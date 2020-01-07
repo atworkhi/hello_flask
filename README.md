@@ -361,8 +361,102 @@ def delete(movie_id):
     display: inline;
 }
 ```
+## 用户认证
+代码: `git checkout v0.7`  
+### 安全密码
+flask依赖"Werkzeug"内置了用于生成和验证密码散列值函数
+- werkzeug.security.generate_password_hash() 生成密码散列
+- werkzeug.security.check_password_hash() 效验散列密码
+```
+>>> from werkzeug.security import generate_password_hash, check_password_hash
+>>> pw_hash = generate_password_hash('dog') # 为密码 dog 生成密码散列值
+>>> pw_hash # 查看密码散列值
+'pbkdf2:sha256:50000$mm9UPTRI$ee68ebc71434a4405a28d34ae3f170757fb424663dc0ca15198cb881edc0978f'
+>>> check_password_hash(pw_hash, 'dog') # 检查散列值是否对应密码 dog
+True
+>>> check_password_hash(pw_hash, 'cat') # 检查散列值是否对应密码 cat
+False
+```
+在user模型中增加username字段和pasoword_hash字段，并实现设置和验证密码(代码在app的user类中),有序修改了表结构，需要重新生成数据库
+> flask initdb --drop
+### 生成admin
+此程序就不设计注册页面，可以编写一个命令，创建管理员的函数"admin()"
+```
+运行生成：
+$ flask admin
+Username: hanguoxing
+Password:
+Repeat for confirmation:
+Creating user...
+Admin Create over!!!
+```
+### 使用`Flask-Login`实现认证
+安装：
+> pip install flask-login
 
+初始化Flask-login,除了实例化扩展外，还需要实现一个"用户加载回调函数",它还提供了`current_user`变量，注册这个函数的目的是当程序运行后，如果用户已经登录，`current_user`变量的值会是当前用户的用户模型类记录。另一个步骤是让存储用户的User模型类继承Flask-login提供和`UserMixin`类，这样会让user类拥有几个用于判断认证状态的属性和方法(`is_authenticated`如果当前用户登录返回True,否则返回false)
+```python
+from flask_login import LoginManager, UserMixin
+login_manage = LoginManager(app)  # 实例化拓展
+@login_manage.user_loader
+def load_user(user_id):
+    '''创建用户加载回调函数，接收用户ID作为参数'''
+    user = User.query.get(int(user_id))
+    return user
+# 创建数据模型
+class User(db.Model, UserMixin):
+    ...
+```
 
+- 登录  
+使用`login_user()`函数实现登录，需要传入用户模型类对象作为参数。如app中的login函数, 并创建对应的模板login.html
+> from flask_login import login_user
+
+- 登出  
+和登录相对，登出操作需要调用`logout_user`函数,添加logout函数
+> from flask_login import logout_user
+
+- 认证保护
+> from flask_login import login_required
+
+认证保护就是页面上不登陆禁止访问的资源，比如登出 增加 编辑 删除等页面，添加认证保护只需要在函数上增加`@login_required`注解即可，如果未登录访问敏感资源，会重定向到登录页面，为了实现重定向，还需要设置`login_manager.login_view='login'`
+
+其中注意由于新增的和首页在一个函数内，使其即处理get又处理post,我们仅使未登录的用户不能新增，因此不能使用注解限制，而要在post请求内部进行过滤
+```
+from flask_login import current_user
+if not current_user.is_authenticated:  # 未认证
+    return redirect(url_for('index'))
+```
+
+- 添加修改用户名  
+在app中增加"settings"函数，并实现对应的模板
+
+- 在index页面中增加登录保护,使用"if current_user.is_authenticated",在模板渲染时会首先判断是否为真，如果未登录为False,则此部分不会被渲染  
+修改index的增加表单和修改删除按钮，修改base的导航增加登录登出修改用户名
+```
+{% if current_user.is_authenticated %}
+<form method="post">
+    Name <input type="text" name="title" autocomplete="off" requ ired>
+    Year <input type="text" name="year" autocomplete="off" requi red>
+    <input class="btn" type="submit" name="submit" value="Add">
+</form>
+{% endif %}
+...
+{% if current_user.is_authenticated %}
+<form class="inline-form" method="post" action="{{ url_for('delete', movie_id=movie.id) }}">
+<input class='btn' type="submit" name="delete" value="delete" onclick="return confirm('Are you sure?')">
+</form>
+<a class="btn" href="{{ url_for('edit', movie_id=movie.id) }}">Edit</a>
+{% endif %}
+
+<!--base.html-->
+{% if current_user.is_authenticated %}
+<li><a href="{{ url_for('settings') }}">Settings</a></li>
+<li><a href="{{ url_for('logout') }}">Logout</a></li>
+{% else %}
+<li><a href="{{ url_for('login') }}">Login</a></li>
+{% endif %}
+```
 
 
 
