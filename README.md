@@ -458,7 +458,130 @@ if not current_user.is_authenticated:  # 未认证
 {% endif %}
 ```
 
+## 测试
+代码: `git checkout v0.8`    
+在未添加测试的时候，每次添加新功能都需要手动在浏览器中进行访问，如果在功能复杂程序中，每次修改或添加新功能，都手动测试所有功能，会产生很大的工作量，另一方面，手动运行测试也并不可靠，因此，我们需要编写自动化测试
 
+### 单元测试
+单元测试是对程序中的函数等独立单元编写的测试，它是自动化测试最重要的形式，Python标准库中的测试框架`unittest`来编写单元测试  
+如： 测试如下函数study.py:
+```python
+def hello(to=None):
+    if to:
+        return 'Hello, %s' % to
+    return 'Hello!'
+```
+编写单元测试test_study.py,并运行此测试文件：
+```
+import unittest
+from study import hello
+
+
+class HelloTestCase(unittest.TestCase):  # 测试用例
+    def setUp(self):  # 测试固件
+        pass
+
+    def tearDown(self):  # 测试固件
+        pass
+
+    def test_hello(self):  # 第一个测试
+        rv = hello()
+        self.assertEqual(rv, 'Hello!')
+
+    def test_hello_to_somebody(self):  # 第二个测试
+        rv = hello(to='hi')
+        self.assertEqual(rv, 'Hello, hi!')
+
+if __name__ == "__main__":
+    unittest.main()
+```
+**说明：**  
+测试用例继承`unittest.TestCase`类，在这个类中创建以`test_`开头的方法将会被视为测试方法。内容为空的两个方法时特殊方法，因为是测试固件的，用来执行一些特殊操作,"setUp"方法会在每个测试方法执行前调用，"tearDown"方法会在每个测试方法执行后调用  
+每一个测试方法(test_xxx)对应一个要测试的函数/功能/使用场景，在测试方法中使用断言方法来判断程序功能是否正常，常用的断言如下：
+1. assertEqual(a,b)
+2. assertNotEqual(a,b)
+3. assertTrue(x)
+4. assertFalse(x)
+5. assertIs(a,b)
+6. assertIsNot(a,b)
+7. assertIsNone(x)
+8. assertIsNotNone(x)
+9. assertIn(a,b)
+10. assertNotIn(a,b)
+
+### 测试Flask程序
+创建一个test_flask.py脚本来存储测试代码:
+- 测试固件
+```
+import unittest
+from app import app, db, Movie, User
+
+class FlaskTestCase(unittest.TestCase):
+    def setUp(self):
+        # 配置更新
+        app.config.update(
+            TESTING=True,
+            SQLALCHEMY_DATABASE_URI='sqlite:///:memory:'
+        )
+        # 创建数据库和表
+        db.create_all()
+        # 创建测试数据
+        user = User(name="Test", username='test')
+        user.set_password('123')
+        movie = Movie(title='Test Movie', year='2020')
+        # 使用add_all放管服测试添加多个实例
+        db.session.add_all([user, movie])
+        db.session.commit()
+
+        self.client = app.test_client()  # 创建客户端测试
+        self.runner = app.test_cli_runner()  # 创建测试命令运行器
+
+    def tearDown(self):
+        db.session.remove()  # 清除数据库会话
+        db.drop_all()  # 删除表
+
+    def test_app_exist(self):
+        self.assertIsNotNone(app)  # 测试程序实例是否存在
+
+    def test_app_is_testing(self):
+        self.assertTrue(app.config['TESTING'])  # 测试程序是否处于测模式
+```
+说明：  
+在"setUp"方法中，更新了两个配置变量`TESTING`设置为True来开启测试模式，这样在运行出错时不会输出多余信息，`SQLALCHEMY_DATABASE_URI`设置为"sqlite:///:memory:"会使用SQLite内存型数据库,不会影响开发时的数据库文件，内存数据库速度更快，并且创建了两个类属性分别为测试客户端(模拟客服端请求)和测试命令运行器(触发自定义命令)  
+
+**测试客户端：**  
+`app.test_client()`返回测试客户端对象，可以模拟浏览器。使用类属性"self.client"保存，对他调用get()方法等于发送get请求，post()方法发送POST请求,如此 编写测试404页面(test_404_page)和主页(test_index_page)  
+测试数据操作相关功能，必须登录账户才能发送，因此编写一个登录的辅助方法，并添加创建、更新和删除
+```
+ def login(self):
+        """登录辅助方法"""
+        self.client.post('/login', data=dict(
+            username='test',
+            password='123'
+        ), follow_redirects=True)   # 跟随重定向
+```
+添加测试登录保护、登录、登出、设置改名等
+
+- 测试命令  
+除了测试程序的各个视图函数，还需要测试自定义的命令:`app.test_cli_runner()`返回一个命令运行器对象，可以使用self.runner保存，通过对他调用`invoke`方法执行命令对象，或者使用`args`关键字直接给出命令参数列表，invoke返回的命令执行结果，它的output属性返回输出信息
+
+- 添加main
+```python
+    if __name__ == "__main__":
+        unittest.main()
+```
+
+- 运行测试,哪里有错误就修改哪里
+> python test_flask.py
+
+### 测试覆盖率
+为了更完善的测试，可以使用`Coverage.py`来检测测试覆盖率
+> pip install coverage  # 安装
+> coverage run --source=app test_flask.py  # 测试覆盖率
+
+由于只需要检查程序脚本app.py的测试覆盖率，所以使用"--source"选项指定要检查的模块或包
+> coverage report # 查看覆盖率
+> coverage html  # 获取html报告
 
 
 
