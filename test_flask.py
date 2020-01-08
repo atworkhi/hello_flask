@@ -1,6 +1,7 @@
 import unittest
-
-from app import app, db, Movie, User, forge, initdb
+from movie import app, db
+from movie.models import Movie, User
+from movie.commands import forge, initdb
 
 
 class FlaskTestCase(unittest.TestCase):

@@ -583,6 +583,29 @@ class FlaskTestCase(unittest.TestCase):
 > coverage report # 查看覆盖率
 > coverage html  # 获取html报告
 
+注意：使用unittest并不是唯一选择，也可使用第三方工具`pytest:`https://pytest.org/en/latest/
+
+## 重构项目
+代码: `git checkout v0.9`  
+由于所有代码都集中在app文件中，对以后的开发和维护造成困难，因此需要对代码进行重构
+- 创建movie目录，作为包文件夹，并将static和templates移动到此
+- __init__.py 包构造文件，创建程序实例
+- views.py 视图函数
+- errors.py  错误处理函数
+- models.py 模型类
+- commands.py 命令函数
+
+#### __init__.py
+创建程序实例，初始化拓展都可以放到此文件中.
+在构造文件中，为了让视图函数、错误处理函数和命令函数注册到程序实例上，我们需要在这里导入这几个模块。但是因为这几个模块同时也要导入构造文件中的程序实例，为了避免循环依赖（A 导入 B，B 导入 A），我们把这一行导入语句放到构造文件的结尾。同样的， load_user() 函数和 inject_user() 函数中使用的模型类也在函数内进行导入
+
+修改test的引入并运行测试
+> coverage run --source=movie test_flask.py
+
+启动程序
+> FLASK_APP=movie
+
+
 
 
 
