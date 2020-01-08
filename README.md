@@ -606,7 +606,7 @@ class FlaskTestCase(unittest.TestCase):
 > FLASK_APP=movie
 
 ## 上线
-代码: `git checkout v0.9` 
+代码: `git checkout v1.0` 
 应用通常两种部署(本地部署和云部署)，在此处使用云平台[PythonAnyWhere](https://www.pythonanywhere.com)
 
 - 生成依赖表(pipenv 可以忽略)
