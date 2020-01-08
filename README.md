@@ -630,7 +630,76 @@ if os.path.exists(dotenv_path):
 from movie import app
 ```
 
+### PythonAnyWhere
 
+#### 环境配置
 
+注册账户(注册完会分配程序域名),其中导航栏包含
+- Consoles(控制台bash shell等)
+- File(文件 可以直接修改代码)
+- Web(管理web程序)
+- Tasks(任务 创建计划任务)
+- Databases(数据库 免费账户可以使用mysql)
 
+创建web程序，点击"web-add anew web app -> Manual configuration(自定义) -> python版本"
 
+#### 初始化程序运行环境
+上传到此平台的服务器有两种方式(github和本地压缩文件files上传)，此处采用github拉取
+
+点击"consoles-bash" 会把代码部署到家目录中
+> git clone https://github.com/hanguoxing/hello_flask.git  
+> cd hello_flask
+
+在项目根目录创建.env文件，并写入生产环境的设置的两个变量  
+使用uuid生成密钥随机字符
+```
+$ python3
+>>> import uuid
+>>> uuid.uuid4().hex
+```
+设置.env
+> nano .env
+```
+SECRET_KEY=xxxxxxxxxxx
+DATABASE_FILE=data-prod.db
+```
+最后安装依赖环境并执行初始化
+```
+python3 -m venv env # 创建虚拟环境
+. env/bin.activate  # 激活虚拟环境
+(env)$ pip install -r requirements.txt # 安装依赖
+(env)$ flask initdb # 初始化数据库
+(env)$ flask admin # 创建管理员
+```
+先不要关闭此console页面,在菜单web打开新标签页设置Code部分
+- Source code: /home/xxxx/hello_flask/
+- Working directory: 同上 home 用户名 项目名
+- wsgi配置点击打开连接配置如下代码
+```
+import sys
+
+path = '/home/atworking/hello_flask'
+
+if path not in sys.path:
+    sys.path.append(path)
+    
+    
+from app import app as application
+```
+PythonAnywhere 会自动从这个文件里导入名称为 application 的程序实例，所以我们从项目目录的 app 模块中导入程序实例 app ，并将名称映射为application 。
+
+- 在 Virtualenv 中配置虚拟环境(/home/atworking/hello_flask/env/)刚创建的
+- 配置静态文件 url配置"/static/", path配置"/home/atworking/hello_flask/movie/static"
+- 点击"Reload:"下绿色按钮使配置生效
+
+点击上面"Configuration for"下方url:
+[atworking.pythonanywhere.com](https://atworking.pythonanywhere.com) 即可访问网站
+
+注意：免费账户每3个月需要点击黄色激活按钮(过期之前会收到邮件提示)
+
+- 更新  
+由于程序时从github下载的，更新上传到github,只需要打开"console"的base.
+> cd hello_flask
+> git pull
+
+当然需要安装依赖等其他操作也是必须的，最后在web面板点击绿色reload即可更新完成
