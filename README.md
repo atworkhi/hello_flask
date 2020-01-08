@@ -605,11 +605,30 @@ class FlaskTestCase(unittest.TestCase):
 启动程序
 > FLASK_APP=movie
 
+## 上线
+代码: `git checkout v0.9` 
+应用通常两种部署(本地部署和云部署)，在此处使用云平台[PythonAnyWhere](https://www.pythonanywhere.com)
 
+- 生成依赖表(pipenv 可以忽略)
+> pip freeze > requirements.txt
 
+- 对于有些配置需要在生产环境下使用不同的值，为了使配置更加灵活，需要在生产环境下使用的配置优先读取，如果没有读取到，则使用默认值
+```
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
+app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(os.path.dirname(app.root_path), os.getenv('DATABASE_FILE', 'data.db'))
+```
+- 在部署程序时，我们不会使用Flask内置服务器，因此对于手动写到.env文件的变量，需要手动使用python-dotenv导入，见app.py
+```
+import os
 
+from dotenv import load_dotenv
 
-
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+    
+from movie import app
+```
 
 
 
